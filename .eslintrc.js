@@ -1,11 +1,16 @@
 module.exports = {
     env: {
-        es6: true,
+        es2020: true,
         node: true,
+        // jest: { globals: true },
     },
     extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
+        'plugin:jest/recommended',
         'plugin:prettier/recommended',
+        'prettier',
         'prettier/@typescript-eslint',
     ],
     globals: {
@@ -14,10 +19,10 @@ module.exports = {
     },
     parser: '@typescript-eslint/parser',
     parserOptions: {
-        ecmaVersion: 11,
+        ecmaVersion: 2020,
         sourceType: 'module',
     },
-    plugins: ['@typescript-eslint'],
+    plugins: ['@typescript-eslint', 'jest'],
     rules: {
         'import/no-unresolved': 'off',
     },

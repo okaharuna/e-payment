@@ -35,15 +35,15 @@ export class EPaymentStack extends cdk.Stack {
             handler: 'handler',
         })
 
-        const notify = new NodejsFunction(this, 'NotifyFn', {
+        const notifyPayment = new NodejsFunction(this, 'NotifyFn', {
             functionName: 'Notify',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/notify/index.ts',
+            entry: 'lambda/notify_payment/index.ts',
             handler: 'handler',
         })
 
-        const fallbackPayment = new NodejsFunction(this, 'FallbackPaymentFn', {
-            functionName: 'FallbackPayment',
+        const paymentFallback = new NodejsFunction(this, 'PaymentFallbackFn', {
+            functionName: 'PaymentFallback',
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/fallback_payment/index.ts',
             handler: 'handler',
@@ -90,7 +90,7 @@ export class EPaymentStack extends cdk.Stack {
 
         // 後払いのフロー
         const notifyTask = new tasks.LambdaInvoke(this, 'Notify', {
-            lambdaFunction: notify,
+            lambdaFunction: notifyPayment,
         })
         const waitForPayment = new sfn.Wait(this, 'WaitForPayment', {
             time: sfn.WaitTime.secondsPath('$.refund_time_sec'),
@@ -98,7 +98,12 @@ export class EPaymentStack extends cdk.Stack {
         const checkPaymentTask = new tasks.LambdaInvoke(this, 'CheckPayment', {
             lambdaFunction: checkPayment,
         })
-        notifyTask.next(waitForPayment).next(checkPaymentTask)
+        const fallbackTask = new tasks.LambdaInvoke(this, 'Fallback', {
+            lambdaFunction: paymentFallback,
+        })
+        notifyTask
+            .next(waitForPayment)
+            .next(checkPaymentTask.addCatch(fallbackTask))
 
         // 自動払い or 後払いの分岐
         const choicePaymentMethod = new sfn.Choice(this, 'ChoicePaymentMethod')

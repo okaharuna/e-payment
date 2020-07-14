@@ -86,7 +86,17 @@ export class EPaymentStack extends cdk.Stack {
                 lambdaFunction: stripeCapture,
             }
         )
-        stripeChargeTask.next(waitForStripeCapture).next(stripeCaptureTask)
+
+        const fallbackTask = new tasks.LambdaInvoke(this, 'Fallback', {
+            lambdaFunction: paymentFallback,
+        })
+
+        stripeChargeTask.next(waitForStripeCapture).next(
+            stripeCaptureTask.addCatch(fallbackTask, {
+                errors: ['StripeError', 'States.Timeout'],
+                resultPath: '$.error',
+            })
+        )
 
         // 後払いのフロー
         const notifyTask = new tasks.LambdaInvoke(this, 'Notify', {
@@ -98,12 +108,12 @@ export class EPaymentStack extends cdk.Stack {
         const checkPaymentTask = new tasks.LambdaInvoke(this, 'CheckPayment', {
             lambdaFunction: checkPayment,
         })
-        const fallbackTask = new tasks.LambdaInvoke(this, 'Fallback', {
-            lambdaFunction: paymentFallback,
-        })
-        notifyTask
-            .next(waitForPayment)
-            .next(checkPaymentTask.addCatch(fallbackTask))
+        notifyTask.next(waitForPayment).next(
+            checkPaymentTask.addCatch(fallbackTask, {
+                errors: ['NonPayment', 'States.Timeout'],
+                resultPath: '$.error',
+            })
+        )
 
         // 自動払い or 後払いの分岐
         const choicePaymentMethod = new sfn.Choice(this, 'ChoicePaymentMethod')

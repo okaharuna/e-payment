@@ -14,8 +14,10 @@ payment service using Stripe.
  * `cdk synth`       emits the synthesized CloudFormation template
 
 ## Stack
+- InfraInitStack
+初回構築時のみデプロイするスタック
+
 - EPaymentStack
 LambdaとStepFunctionsをデプロイするスタック
 
-- InfraInitStack
-初回構築時のみデプロイするスタック
+

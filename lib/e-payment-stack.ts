@@ -3,11 +3,17 @@ import * as lambda from '@aws-cdk/aws-lambda'
 import * as sfn from '@aws-cdk/aws-stepfunctions'
 import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
 import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs'
+import { Role } from '@aws-cdk/aws-iam'
+
 const USER_TABLE_NAME = 'Users'
 const PAYMENT_TABLE_NAME = 'Payments'
 
+interface InfraInitStackProps extends cdk.StackProps {
+    lambdaCommonRole: Role
+}
+
 export class EPaymentStack extends cdk.Stack {
-    constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: cdk.Construct, id: string, props: InfraInitStackProps) {
         super(scope, id, props)
 
         /**
@@ -19,6 +25,7 @@ export class EPaymentStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/check_user_data/index.ts',
             handler: 'handler',
+            role: props.lambdaCommonRole,
         })
 
         const stripeCharge = new NodejsFunction(this, 'StripeChargeFn', {
@@ -26,6 +33,7 @@ export class EPaymentStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/stripe_charge/index.ts',
             handler: 'handler',
+            role: props.lambdaCommonRole,
         })
 
         const checkPayment = new NodejsFunction(this, 'CheckPaymentFn', {
@@ -33,6 +41,7 @@ export class EPaymentStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/check_payment/index.ts',
             handler: 'handler',
+            role: props.lambdaCommonRole,
         })
 
         const notifyPayment = new NodejsFunction(this, 'NotifyFn', {
@@ -40,6 +49,7 @@ export class EPaymentStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/notify_payment/index.ts',
             handler: 'handler',
+            role: props.lambdaCommonRole,
         })
 
         const paymentFallback = new NodejsFunction(this, 'PaymentFallbackFn', {
@@ -47,6 +57,7 @@ export class EPaymentStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/fallback_payment/index.ts',
             handler: 'handler',
+            role: props.lambdaCommonRole,
         })
 
         const stripeCapture = new NodejsFunction(this, 'StripeCaptureFn', {
@@ -54,6 +65,7 @@ export class EPaymentStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_12_X,
             entry: 'lambda/stripe_capture/index.ts',
             handler: 'handler',
+            role: props.lambdaCommonRole,
         })
 
         /**

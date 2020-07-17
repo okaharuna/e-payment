@@ -1,11 +1,7 @@
 import { Context } from 'aws-lambda'
 import * as AWS from 'aws-sdk'
+import { Payment } from '../../shared/types'
 const dynamoDB = new AWS.DynamoDB.DocumentClient()
-
-interface Payment {
-    user_id: string
-    amount: number
-}
 
 export const handler = async (
     event: Payment,

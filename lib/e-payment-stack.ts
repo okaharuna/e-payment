@@ -23,7 +23,7 @@ export class EPaymentStack extends cdk.Stack {
         const checkUserData = new NodejsFunction(this, 'CheckUserDataFn', {
             functionName: 'CheckUserData',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/check_user_data/index.ts',
+            entry: 'src/functions/check_user_data/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -31,7 +31,7 @@ export class EPaymentStack extends cdk.Stack {
         const createPayment = new NodejsFunction(this, 'CreatePaymentFn', {
             functionName: 'CreatePayment',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/create_payment/index.ts',
+            entry: 'src/functions/create_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -39,7 +39,7 @@ export class EPaymentStack extends cdk.Stack {
         const checkPayment = new NodejsFunction(this, 'CheckPaymentFn', {
             functionName: 'CheckPayment',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/check_payment/index.ts',
+            entry: 'src/functions/check_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -47,7 +47,7 @@ export class EPaymentStack extends cdk.Stack {
         const notifyPayment = new NodejsFunction(this, 'NotifyFn', {
             functionName: 'Notify',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/notify_payment/index.ts',
+            entry: 'src/functions/notify_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -55,7 +55,7 @@ export class EPaymentStack extends cdk.Stack {
         const paymentFallback = new NodejsFunction(this, 'PaymentFallbackFn', {
             functionName: 'PaymentFallback',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/fallback_payment/index.ts',
+            entry: 'src/functions/fallback_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -63,7 +63,7 @@ export class EPaymentStack extends cdk.Stack {
         const confirmPayment = new NodejsFunction(this, 'ConfirmPaymentFn', {
             functionName: 'ConfirmPayment',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/confirm_payment/index.ts',
+            entry: 'src/functions/confirm_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })

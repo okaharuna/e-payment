@@ -16,7 +16,7 @@ export class StripeActions {
 
     async getSecret(secretName: string): Promise<StripeSecret> {
         if (this.useCache && this.secretCache) return this.secretCache
-        const secretValue = await secretsManager
+        const secretValue = await this.secretsManager
             .getSecretValue({
                 SecretId: secretName,
             })
@@ -36,5 +36,48 @@ export class StripeActions {
             typescript: true,
         })
         return this.stripe
+    }
+
+    async registerCard(
+        customerId: string,
+        paymentMethod: string
+    ): Promise<Stripe.PaymentMethod> {
+        /** カスタマーにカードを登録 */
+        const stripe = await this.getStripe()
+        const result = await stripe.paymentMethods.attach(paymentMethod, {
+            customer: customerId,
+        })
+        return result as Stripe.PaymentMethod
+    }
+
+    async createCustomer(
+        paymentMethod: string,
+        email?: string
+    ): Promise<Stripe.Customer> {
+        /** Stripeにカスタマー登録 */
+        const stripe = await this.getStripe()
+        const params: Stripe.CustomerCreateParams = {
+            payment_method: paymentMethod,
+            invoice_settings: {
+                default_payment_method: paymentMethod,
+            },
+        }
+        if (email) params.email = email
+        const result = await stripe.customers.create(params)
+        return result as Stripe.Customer
+    }
+
+    async createPayment(
+        amount: number,
+        paymentMethod: string
+    ): Promise<Stripe.PaymentIntent> {
+        const stripe = await this.getStripe()
+        const result = await stripe.paymentIntents.create({
+            amount,
+            currency: 'JPY',
+            payment_method_types: ['card'],
+            payment_method: paymentMethod,
+        })
+        return result as Stripe.PaymentIntent
     }
 }

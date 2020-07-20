@@ -12,7 +12,7 @@ const createPayment = async (user: User, amount: number) => {
         amount,
         currency: 'JPY',
         payment_method_types: ['card'],
-        payment_method: user.paymentMethod,
+        payment_method: user.stripePaymentMethod,
     })
     return paymentIntent
 }
@@ -25,7 +25,7 @@ export const handler = async (
     console.info({ event })
     console.info({ context })
     const user = await users.get(event.userId)
-    if (!user) throw new Error(`user not found.`)
+    if (!user) throw new Error(`No user data found`)
     const result = createPayment(user, event.amount)
     return result
 }

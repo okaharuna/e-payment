@@ -5,8 +5,8 @@ import * as tasks from '@aws-cdk/aws-stepfunctions-tasks'
 import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs'
 import { Role } from '@aws-cdk/aws-iam'
 
-const USER_TABLE_NAME = 'Users'
-const PAYMENT_TABLE_NAME = 'Payments'
+// const USER_TABLE_NAME = 'Users'
+// const PAYMENT_TABLE_NAME = 'Payments'
 
 interface InfraInitStackProps extends cdk.StackProps {
     lambdaCommonRole: Role
@@ -23,15 +23,15 @@ export class EPaymentStack extends cdk.Stack {
         const checkUserData = new NodejsFunction(this, 'CheckUserDataFn', {
             functionName: 'CheckUserData',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/check_user_data/index.ts',
+            entry: 'src/functions/check_user_data/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
 
-        const stripeCharge = new NodejsFunction(this, 'StripeChargeFn', {
-            functionName: 'StripeCharge',
+        const createPayment = new NodejsFunction(this, 'CreatePaymentFn', {
+            functionName: 'CreatePayment',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/stripe_charge/index.ts',
+            entry: 'src/functions/create_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -39,7 +39,7 @@ export class EPaymentStack extends cdk.Stack {
         const checkPayment = new NodejsFunction(this, 'CheckPaymentFn', {
             functionName: 'CheckPayment',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/check_payment/index.ts',
+            entry: 'src/functions/check_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -47,7 +47,7 @@ export class EPaymentStack extends cdk.Stack {
         const notifyPayment = new NodejsFunction(this, 'NotifyFn', {
             functionName: 'Notify',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/notify_payment/index.ts',
+            entry: 'src/functions/notify_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -55,15 +55,15 @@ export class EPaymentStack extends cdk.Stack {
         const paymentFallback = new NodejsFunction(this, 'PaymentFallbackFn', {
             functionName: 'PaymentFallback',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/fallback_payment/index.ts',
+            entry: 'src/functions/fallback_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
 
-        const stripeCapture = new NodejsFunction(this, 'StripeCaptureFn', {
-            functionName: 'StripeCapture',
+        const confirmPayment = new NodejsFunction(this, 'ConfirmPaymentFn', {
+            functionName: 'ConfirmPayment',
             runtime: lambda.Runtime.NODEJS_12_X,
-            entry: 'lambda/stripe_capture/index.ts',
+            entry: 'src/functions/confirm_payment/index.ts',
             handler: 'handler',
             role: props.lambdaCommonRole,
         })
@@ -81,21 +81,25 @@ export class EPaymentStack extends cdk.Stack {
         )
 
         // 自動払いのフロー
-        const stripeChargeTask = new tasks.LambdaInvoke(this, 'StripeCharge', {
-            lambdaFunction: stripeCharge,
-        })
-        const waitForStripeCapture = new sfn.Wait(
+        const createPaymentTask = new tasks.LambdaInvoke(
             this,
-            'WaitForStripeCapture',
+            'CreatePayment',
+            {
+                lambdaFunction: createPayment,
+            }
+        )
+        const waitForConfirmPayment = new sfn.Wait(
+            this,
+            'WaitForConfirmPayment',
             {
                 time: sfn.WaitTime.secondsPath('$.refund_time_sec'),
             }
         )
-        const stripeCaptureTask = new tasks.LambdaInvoke(
+        const confirmPaymentTask = new tasks.LambdaInvoke(
             this,
-            'StripeCapture',
+            'ConfirmPayment',
             {
-                lambdaFunction: stripeCapture,
+                lambdaFunction: confirmPayment,
             }
         )
 
@@ -103,8 +107,8 @@ export class EPaymentStack extends cdk.Stack {
             lambdaFunction: paymentFallback,
         })
 
-        stripeChargeTask.next(waitForStripeCapture).next(
-            stripeCaptureTask.addCatch(fallbackTask, {
+        createPaymentTask.next(waitForConfirmPayment).next(
+            confirmPaymentTask.addCatch(fallbackTask, {
                 errors: ['StripeError', 'States.Timeout'],
                 resultPath: '$.error',
             })
@@ -131,7 +135,7 @@ export class EPaymentStack extends cdk.Stack {
         const choicePaymentMethod = new sfn.Choice(this, 'ChoicePaymentMethod')
             .when(
                 sfn.Condition.stringEquals('$.payment_method', 'stripe'),
-                stripeChargeTask
+                createPaymentTask
             )
             .otherwise(notifyTask)
 
